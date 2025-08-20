@@ -1,4 +1,4 @@
-name: Build Python Wheel
+name: Build Python Wheels (Multi-OS)
 
 on:
   push:
@@ -7,30 +7,47 @@ on:
   workflow_dispatch: # 允许在 GitHub 网页上手动触发
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # 使用最新的 Ubuntu 系统作为编译环境
+  build-wheels:
+    name: Build wheel on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # 定义要构建的操作系统环境
+        os: [ubuntu-latest, windows-latest]
+        # 如果你还需要 macOS，可以添加 macos-latest
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+
+        # 如果你还需要多个 Python 版本，可以取消下面的注释
+        # python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        # 并删除下面这行
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        
+        # 排除某些组合（如果需要）
+        # exclude:
+        #   - os: windows-latest
+        #     python-version: "3.8"
 
     steps:
-    - uses: actions/checkout@v4 # 第一步：检出你的代码仓库
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12' # 使用最新的稳定版 3.x
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install build # 安装 PEP 517 推荐的构建工具
+        pip install build
 
     - name: Build wheel
       run: |
-        python -m build --wheel --outdir dist/ # 构建 wheel 并输出到 dist 目录
+        python -m build --wheel --outdir dist/
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: distribution-packages
-        path: dist/ # 将 dist 目录下的所有文件（.whl, .tar.gz）打包为可供下载的工件
+        name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: dist/
