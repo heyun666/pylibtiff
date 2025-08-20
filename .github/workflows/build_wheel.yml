@@ -1,0 +1,36 @@
+name: Build Python Wheel
+
+on:
+  push:
+    tags:
+      - 'v*' # 当推送类似 v1.0.0 的标签时触发
+  workflow_dispatch: # 允许在 GitHub 网页上手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 系统作为编译环境
+
+    steps:
+    - uses: actions/checkout@v4 # 第一步：检出你的代码仓库
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12' # 使用最新的稳定版 3.x
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build # 安装 PEP 517 推荐的构建工具
+
+    - name: Build wheel
+      run: |
+        python -m build --wheel --outdir dist/ # 构建 wheel 并输出到 dist 目录
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: distribution-packages
+        path: dist/ # 将 dist 目录下的所有文件（.whl, .tar.gz）打包为可供下载的工件
